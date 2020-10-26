@@ -11,7 +11,13 @@ int POT2Y;
 int COUNT;
 boolean SHOW = false;
 
-
+void setuo(){
+    size(300,300);
+    background(0);
+    smooth();
+    String COM3 = Serial.list()[0];
+    myPort = new Serial(this, COM3, 9600);
+}
 
 
 
