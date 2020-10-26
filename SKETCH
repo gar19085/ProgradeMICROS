@@ -11,12 +11,34 @@ int POT2Y;
 int COUNT;
 boolean SHOW = false;
 
-void setuo(){
+void setup(){
     size(300,300);
     background(0);
     smooth();
     String COM3 = Serial.list()[0];
     myPort = new Serial(this, COM3, 9600);
+}
+
+void serialEvent(Serial, myPort){
+    int input = myPort.read();
+    DATA[COUNT] = input;
+    COUNT++;
+        if (COUNT > 1){
+            POT1X = DATA[0];
+            delay(5);
+            POT2Y = DATA[1];
+            delay(5);
+            println(POT1X + "," + POT2Y);
+            myPort.write('A');
+            COUNT = 0;
+        }
+}
+
+
+void  draw(){
+    strokeWeight(8);
+    stroke(255);
+    line(POT1X, POT2Y, POT1X, POT1Y);
 }
 
 
