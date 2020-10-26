@@ -1,0 +1,17 @@
+//CONFIG PARA DISPLAY Y LEIDA DE DATOS DE PIC
+//REALIZADO EN PROCESSING   
+
+import processing.serial.*;
+Serial myPort;
+
+
+int[] DATA = new int[];
+int POT1X;
+int POT2Y;
+int COUNT;
+boolean SHOW = false;
+
+
+
+
+

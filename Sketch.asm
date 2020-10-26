@@ -198,41 +198,25 @@ RETURN
 ENVIO1:
     BCF	    PZ, 0
     BSF	    PZ, 1
-    ;BCF	    PZ, 2
     BTFSS   PIR1, TXIF
     MOVFW   ADC1
-    ;MOVLW   0x32
     MOVWF   TXREG
     RETURN
     
 ENVIO2:
     BSF	    PZ, 0
     BCF	    PZ, 1
-    ;BCF	    PZ, 2
     BTFSS   PIR1, TXIF
     MOVFW   ADC2
-    ;MOVLW   0x0A
     MOVWF   TXREG
     RETURN    
-    
-ENVIO3:
-    BSF	    PZ, 0
-    BCF	    PZ, 1    
-    BCF	    PZ, 2
-    BTFSS   PIR1, TXIF
-    ;MOVFW   ADC2
-    MOVLW   0x0A
-    MOVWF   TXREG
-    RETURN       
     
 SELE:
     BTFSC   PZ, 0
     GOTO    ENVIO1
     BTFSC   PZ, 1
     GOTO    ENVIO2
-    RETURN
-    ;BTFSC   PZ, 2
-    ;GOTO    ENVIO3    
+    RETURN  
         
 ;***************************CONFIG DISPLAYS************************************    
 CONFIG_DISPLAY
