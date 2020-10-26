@@ -4,7 +4,6 @@
 import processing.serial.*;
 Serial myPort;
 
-
 int[] DATA = new int[];
 int POT1X;
 int POT2Y;
@@ -33,7 +32,6 @@ void serialEvent(Serial, myPort){
             COUNT = 0;
         }
 }
-
 
 void  draw(){
     strokeWeight(8);
