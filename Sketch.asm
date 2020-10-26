@@ -26,19 +26,18 @@
  
     
   GPR	UDATA
-  ADC1		RES 1
-  ADC2	RES 1			
+  ADC1	    	RES 1
+  ADC2	        RES 1			
   SHOW_DISP1	RES 1
   SHOW_DISP2	RES 1
   SHOW_DISP3	RES 1
   SHOW_DISP4	RES 1	
-  DISP1		RES 1
-  DISP2		RES 1	
-  DISP3		RES 1
-  DISP4		RES 1	
-  DELAY_5MS	RES 1		
-  TOG_DISP	RES 1
-  PZ		RES 1
+  DISP1		    RES 1
+  DISP2		    RES 1	
+  DISP3		    RES 1
+  DISP4		    RES 1	
+  DELAY_5MS	    RES 1		
+  PZ		    RES 1
 
     RES_VECT  CODE    0x0000            ; processor reset vector
     GOTO    SETUP                   ; go to beginning of program
@@ -56,16 +55,14 @@ SETUP
     CALL CONFIG_TXRX
     CALL CONFIG_ADC
     CALL CONFIG_DISPLAY
-    
+
     CLRF PZ
     BSF	 PZ, 0
- 
     
     BANKSEL	DELAY_5MS
     CLRF	DELAY_5MS
     MOVLW	.1                   ;ASIGNO 1 PARA REALIZAR 1 INTERRUPCIONES HASTA LLEGAR A 5MS
     MOVWF	DELAY_5MS
-        
     
  GOTO LOOP
  
@@ -73,15 +70,9 @@ LOOP
     CALL    POT1
     CALL    DELAY10US    
     CALL    POT2
-    
     CALL    SELE 
-    
-    CALL DISPLAY1
-    CALL DISPLAY2
-    CALL DISPLAY3
-    CALL DISPLAY4
-     
-    
+    CALL    DISPLAY1     
+        
     GOTO LOOP                          ; loop forever
 
 ;*********************************CONFIG GENERALES*****************************
@@ -107,7 +98,6 @@ CONFIG_IO
 
     RETURN
 
-
 CONFIG_OSCCON    
     BANKSEL	OSCCON
     MOVLW	B'01100001'
@@ -129,7 +119,8 @@ DELAY10US
     NOP
     NOP
     RETURN
-    
+;*****************************CONFIG ENVIO Y RECIBIR************
+
 CONFIG_TXRX
     BANKSEL TXSTA
     BCF	    TXSTA, SYNC
@@ -167,7 +158,7 @@ CONFIG_ADC2
     MOVLW   B'01001001'
     MOVWF   ADCON0
     RETURN
-         
+;********POTENCIOMETROS CONFIG****        
 POT1:
     CALL    CONFIG_ADC
     BANKSEL PORTA
@@ -194,7 +185,7 @@ POT2:
     MOVWF   SHOW_DISP4
 RETURN    
     
-;****************************RUTINAS********************************************     
+;****************************RUTINAS DE ENVIO**********************************     
 ENVIO1:
     BCF	    PZ, 0
     BSF	    PZ, 1
