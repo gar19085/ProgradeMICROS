@@ -1,6 +1,6 @@
 ;*****************************************************************************
 ;UNIVERSIDAD DEL VALLE
-;LABORATORIO 6
+;PROYECTO 2 ETCH SKETCH
 ;RODRIGO GARCÍA 19085
 ;***************************************************************************** 
     ; TODO INSERT CONFIG CODE HERE USING CONFIG BITS GENERATOR
