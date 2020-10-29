@@ -36,7 +36,12 @@
   DISP2		    RES 1	
   DISP3		    RES 1
   DISP4		    RES 1	
-  DELAY_5MS	    RES 1		
+  W_TEMP	    RES 1
+  STATUS_TEMP	RES 1
+  DELAY_5MS	    RES 1
+  DELAY_500MS	RES 1	
+  TOG_DISP	    RES 1
+  TRS		    RES 1	
   PZ		    RES 1
 
     RES_VECT  CODE    0x0000            ; processor reset vector
@@ -45,24 +50,43 @@
 ; TODO ADD INTERRUPTS HERE IF USED
 ;**********************************INTERRUPTS***********************************
 ;ISR_VEC CODE 0X004
-
+ PUSH:
+    MOVWF W_TEMP
+    SWAPF STATUS, W
+    MOVWF STATUS_TEMP
+ ISR:
+    BTFSS   INTCON, T0IF
+    GOTO    POP
+    CALL    RUT_TOG
+    MOVLW   .237
+    MOVWF   TMR0
+    BCF     INTCON, T0IF
+    DECFSZ  DELAY_5MS
+    GOTO    POP
+    DECFSZ  TOG_DISP
+    GOTO    DISPLAY_VAR
+    GOTO    DISPLAY_TOG
+ POP:
+    SWAPF STATUS_TEMP, W
+    MOVWF STATUS 
+    SWAPF W_TEMP, F
+    SWAPF W_TEMP, W  
+RETFIE
 ;******************************************************************************    
         
 MAIN_PROG CODE                      ; let linker place main program
 
 SETUP
     CALL CONFIG_IO
-    CALL CONFIG_TXRX
-    CALL CONFIG_ADC
+    CALL CONFIG_TMR0
+    CALL CONFIG_OSCCON  
     CALL CONFIG_DISPLAY
+    CALL CONFIG_TXRX
+    CALL CONFIG_DELAY  
 
     CLRF PZ
     BSF	 PZ, 0
     
-    BANKSEL	DELAY_5MS
-    CLRF	DELAY_5MS
-    MOVLW	.1                   ;ASIGNO 1 PARA REALIZAR 1 INTERRUPCIONES HASTA LLEGAR A 5MS
-    MOVWF	DELAY_5MS
     
  GOTO LOOP
  
@@ -70,8 +94,7 @@ LOOP
     CALL    POT1
     CALL    DELAY10US    
     CALL    POT2
-    CALL    SELE 
-    CALL    DISPLAY1     
+    CALL    SELE   
         
     GOTO LOOP                          ; loop forever
 
@@ -98,6 +121,15 @@ CONFIG_IO
 
     RETURN
 
+
+CONFIG_DELAY
+    BANKSEL	DELAY_5MS
+    CLRF	DELAY_5MS
+    MOVLW	.1              ;ASIGNO 1 PARA REALIZAR 1 INTERRUPCIONES HASTA LLEGAR A 10MS
+    MOVWF	DELAY_5MS
+RETURN    
+
+
 CONFIG_OSCCON    
     BANKSEL	OSCCON
     MOVLW	B'01100001'
@@ -106,6 +138,21 @@ CONFIG_OSCCON
     BCF		INTCON, T0IF
     BSF		INTCON, GIE
     RETURN
+
+CONFIG_TMR0
+   BANKSEL  OPTION_REG
+   BCF	    OPTION_REG, T0CS
+   BCF	    OPTION_REG, PSA
+   BSF	    OPTION_REG, PS2 
+   BSF	    OPTION_REG, PS1
+   BSF	    OPTION_REG, PS0
+   BSF	    OPTION_REG, 7
+   BANKSEL  TMR0
+   MOVLW    .237
+   MOVWF    TMR0 
+   BCF	    INTCON, T0IF 
+   RETURN  
+        
     
 DELAY10US
     NOP
@@ -168,8 +215,8 @@ POT1:
     GOTO    $-1
     MOVF    ADRESH, W
     MOVWF   ADC1
-    MOVWF   SHOW_DISP1
-    MOVWF   SHOW_DISP2          
+    ;MOVWF   SHOW_DISP1
+    ;MOVWF   SHOW_DISP2          
 RETURN
         
 POT2:
@@ -181,8 +228,8 @@ POT2:
     GOTO    $-1
     MOVF    ADRESH, W
     MOVWF   ADC2
-    MOVWF   SHOW_DISP3
-    MOVWF   SHOW_DISP4
+    ;MOVWF   SHOW_DISP3
+    ;MOVWF   SHOW_DISP4
 RETURN    
     
 ;****************************RUTINAS DE ENVIO**********************************     
