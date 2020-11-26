@@ -1,0 +1,313 @@
+; TODO INSERT CONFIG CODE HERE USING CONFIG BITS GENERATOR
+
+
+; PIC16F887 Configuration Bit Settings
+
+; Assembly source line config statements
+
+#include "p16f887.inc"
+
+; CONFIG1
+; __config 0xE0D4
+ __CONFIG _CONFIG1, _FOSC_INTRC_NOCLKOUT & _WDTE_OFF & _PWRTE_OFF & _MCLRE_OFF & _CP_OFF & _CPD_OFF & _BOREN_OFF & _IESO_OFF & _FCMEN_OFF & _LVP_OFF
+; CONFIG2
+; __config 0xFFFF
+ __CONFIG _CONFIG2, _BOR4V_BOR40V & _WRT_OFF
+ 
+ 
+ 
+ 
+   GPR	UDATA
+   LEDA	RES 1
+   LEDB	RES 1
+   LEDC RES 1
+
+	
+	
+RES_VECT  CODE    0x0000            ; processor reset vector
+    GOTO    SETUP                   ; go to beginning of program
+
+; TODO ADD INTERRUPTS HERE IF USED
+    
+ISR_VEC       CODE    0x0004   
+
+PUSH:
+    BCF	    INTCON, GIE
+    MOVWF   W_TEMP
+    SWAPF   STATUS, W
+    MOVWF   STATUS_TEMP
+
+ISR:
+    BTFSC   PIR1, TMR2IF
+    CALL    FUE_TMR2
+    BTFSC   PIR1, TMR1IF
+    CALL    FUE_TMR1
+    BTFSC   INTCON, T0IF
+    GOTO    POP
+    CALL    FUE_TMR0
+
+    
+    
+POP:
+    SWAPF   STATUS_TEMP, W
+    MOVWF   STATUS
+    SWAPF   W_TEMP, F
+    SWAPF   W_TEMP, W
+    BSF	    INTCON, GIE
+    RETFIE
+  ;***************************************************************************
+MAIN_PROG CODE                      ; let linker place main program
+
+;******************************************************************************
+;   SUBRUTINAS INTERRUPCIÓN
+;******************************************************************************
+FUE_TMR1
+    MOVLW   08FH
+    MOVWF   TMR1H
+    MOVLW   0EEH
+    MOVWF   TMR1L
+    BCF	    PIR1, TMR1IF
+    INCF    CONTADOR1
+    RETURN
+ 
+    
+FUE_TMR0
+    BTFSS INTCON, T0IF 
+    GOTO POP
+    MOVLW .6
+    MOVWF TMR0
+    BCF INTCON, T0IF
+    CALL DISPLAY
+    RETURN
+;******************************************************************************     
+ 
+ 
+SETUP
+
+    GOTO LOOP                          ; loop forever
+
+    
+LOOP
+    
+    
+    
+    GOTO LOOP
+
+;*********************************CONFIG GENERALES*****************************
+CONFIG_IO
+    BCF STATUS, 5
+    BCF STATUS, 6
+    CLRF PORTA
+    CLRF PORTB
+    CLRF PORTC
+    CLRF PORTD
+    CLRF PORTE
+    
+    BANKSEL TRISA        ;INDICO LAS ENTRADAS Y SALIDAS PARA LOS PUERTOS A USAR
+    CLRF    TRISA
+    COMF    TRISA
+    
+    CLRF   TRISB
+    
+    CLRF   TRISC
+    
+    CLRF   TRISD
+    
+    BANKSEL ANSEL
+    CLRF    ANSEL
+    COMF    ANSEL    
+
+    RETURN
+
+CONFIG_ADC
+    BANKSEL ADCON1
+    MOVLW   B'00000000'
+    MOVWF   ADCON1
+    RETURN    
+    
+DELAY10US
+    DECFSZ  DELAY,  1
+    GOTO    $-1
+    MOVLW   .10
+    MOVWF   DELAY
+    RETURN
+
+CONFIG_PWM
+    BANKSEL T2CON
+    MOVLW   B'00000111'    ;POSTSCALER EN 1:1, TIMER 2 EN ON, 1X PRESCALER 1:16
+    MOVWF   T2CON
+    
+    BANKSEL PR2
+    MOVLW   .156
+    MOVWF   PR2
+
+    BANKSEL TRISC
+    MOVLW   B'00000000'
+    MOVWF   TRISC
+    
+    ;CONFIGURACIÓN DE CCP1CON
+    BANKSEL CCP1CON	    ;PWM MODE
+    BSF	    CCP1CON,   3
+    BSF	    CCP1CON,   2
+    BCF	    CCP1CON,   1
+    BCF	    CCP1CON,   0
+    ;CONFIGURACIÓN DE CCP2CON
+    BANKSEL CCP2CON	    ;PWM MODE
+    BSF	    CCP2CON,   3
+    BSF	    CCP2CON,   2
+RETURN
+    
+CONFIG_OSCCON    
+    BANKSEL	OSCCON
+    MOVLW	B'01100001'
+    MOVWF	OSCCON
+    BSF		INTCON, T0IE
+    BCF		INTCON, T0IF
+    BSF		INTCON, GIE
+    RETURN
+    
+    
+CONFIG_TMR0
+   BANKSEL  OPTION_REG
+   BCF	    OPTION_REG, T0CS
+   BCF	    OPTION_REG, PSA
+   BSF	    OPTION_REG, PS2 
+   BSF	    OPTION_REG, PS1
+   BSF	    OPTION_REG, PS0
+   BSF	    OPTION_REG, 7
+   BANKSEL  TMR0
+   MOVLW    .237
+   MOVWF    TMR0 
+   BCF	    INTCON, T0IF 
+   RETURN  
+   
+CONFIG_TMR1
+    BANKSEL	PORTB
+    BCF		T1CON, TMR1GE
+    BCF		T1CON, T1CKPS1  ;PRESCALER 2:1
+    BSF		T1CON, T1CKPS0
+    BCF		T1CON, T1OSCEN	    ;RELOJ INTERNO
+    BCF		T1CON, TMR1CS
+    BSF		T1CON, TMR1ON	    ;ENCIENDE TMR1
+    MOVLW	085H
+    MOVWF	TMR1H
+    MOVLW	0EEH
+    MOVWF	TMR1L
+    BCF		PIR1, TMR1IF
+    RETURN
+    
+CONFIG_INTERRUPT
+    BSF	INTCON, GIE
+    BSF INTCON, T0IE
+    BCF INTCON, T0IF
+    BANKSEL TRISA
+    BSF	    PIE1, TMR1IE
+    BSF	    PIE1, TMR2IE
+    BANKSEL PORTA
+    BSF	    INTCON, GIE
+    BSF	    INTCON, PEIE
+    BCF	    PIR1, TMR1IF
+    BCF	    PIR1, TMR2IF
+    RETURN   
+   
+CONFIG_TXRX
+    BANKSEL TXSTA
+    BCF	    TXSTA, SYNC
+    BSF	    TXSTA, BRGH
+    BANKSEL BAUDCTL
+    BSF	    BAUDCTL, BRG16
+    BANKSEL SPBRG
+    MOVLW   .25
+    MOVWF   SPBRG
+    CLRF    SPBRGH
+    BANKSEL RCSTA
+    BSF	    RCSTA, SPEN
+    BCF	    RCSTA, RX9
+    BSF	    RCSTA, CREN
+    BANKSEL TXSTA
+    BSF	    TXSTA, TXEN
+    BANKSEL PORTA
+    RETURN
+    
+    
+;*********RUTINA ENVIO*****************************************************
+    
+    
+ENVIO1:
+    BCF	    PZ, 0
+    BSF	    PZ, 1
+    BTFSS   PIR1, TXIF
+    MOVFW   ADC1
+    MOVWF   TXREG
+    RETURN
+    
+ENVIO2:
+    BSF	    PZ, 0
+    BCF	    PZ, 1
+    BTFSS   PIR1, TXIF
+    MOVFW   ADC2
+    MOVWF   TXREG
+    RETURN    
+    
+SELE:
+    BTFSC   PZ, 0
+    GOTO    ENVIO1
+    CALL    DELAY10US
+    BTFSC   PZ, 1
+    GOTO    ENVIO2
+    CALL    DELAY10US
+    RETURN  
+    
+    
+;**********************************ADC A, B, C********************************    
+    
+POTA:
+    BANKSEL PORTA
+    CALL    DELAY10US
+    BANKSEL ADCON0
+    MOVLW   B'01000001'
+    MOVWF   ADCON0    
+    BSF	    ADCON0, GO
+    BTFSC   ADCON0, GO
+    GOTO    $-1
+    MOVF    ADRESH, 0
+    MOVWF   ADC_V    
+    BANKSEL CCPR1L
+    MOVF    ADC_V, 0
+    MOVWF   CCPR1L
+RETURN
+    
+    
+POTB:
+    BANKSEL PORTA
+    CALL    DELAY10US
+    BANKSEL ADCON0
+    MOVLW   B'01000101'
+    MOVWF   ADCON0
+    BSF	    ADCON0, GO
+    BTFSC   ADCON0, GO
+    GOTO    $-1
+    MOVF    ADRESH, 0
+    MOVWF   ADC_V2
+    BANKSEL CCPR2L
+    MOVF    ADC_V2, 0
+    MOVWF   CCPR2L    
+RETURN     
+    
+
+POTC:
+    BANKSEL PORTA
+    CALL    DELAY10US
+    BANKSEL ADCON0
+    MOVLW   B'01000101'
+    MOVWF   ADCON0
+    BSF	    ADCON0, GO
+    BTFSC   ADCON0, GO
+    GOTO    $-1
+    MOVF    ADRESH, 0
+    MOVWF   ADC_V2
+    BANKSEL CCPR2L
+    MOVF    ADC_V2, 0
+    MOVWF   CCPR2L    
+RETURN    
+    END
