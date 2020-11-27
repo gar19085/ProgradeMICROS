@@ -27,7 +27,8 @@
    SERVH    RES 1
    SERVL    RES 1
    SERV3    RES 1 
-
+   CONT1   RES 1
+   CONT2    RES 1
 	
 RES_VECT  CODE    0x0000            ; processor reset vector
     GOTO    SETUP                   ; go to beginning of program
@@ -60,7 +61,7 @@ POP:
     BSF	    INTCON, GIE
     RETFIE
   ;***************************************************************************
-MAIN_PROG CODE                      ; let linker place main program
+MAIN_PROG CODE     0x0100                ; let linker place main program
 
 ;******************************************************************************
 ;   SUBRUTINAS INTERRUPCIÓN
@@ -96,24 +97,20 @@ SETUP
     
 LOOP
     CALL POTA
-    CALL DELAY10US
+    CALL DELAY10U
     CALL POTB
-    CALL DELAY10US
+    CALL DELAY10U
     CALL POTC
-    CALL DELAY10US
+    CALL DELAY10U
     CALL POTD
-    CALL DELAY10US    
-
-    BTFSS   PIR1, TXIF
-    MOVFW   ADCA
-    MOVWF   TXREG
-    
-    
+    CALL DELAY10U
+    CALL ENVIO
+    CALL DELAYMAIN
+    CALL PWM3
+        
     CLRF    SERV3
     CLRF    SERVH
     CLRF    SERVL
-    CALL    PWM3
-
     
     GOTO LOOP
 
@@ -251,13 +248,50 @@ CONFIG_TXRX
     BANKSEL PORTA
     RETURN
     
+DELAY10U
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    RETURN    
     
+    
+DELAY_SMALL
+    MOVLW .10
+    MOVFW CONT1
+    DECFSZ CONT1, F
+               GOTO $-1 
+ RETURN
+ 
+DELAYMAIN
+    MOVLW .10
+    MOVWF CONT2
+CONFIG1:    
+    CALL DELAY_SMALL
+    DECFSZ CONT2, F
+    GOTO CONFIG1
+    RETURN
+
+ENVIO:
+    BTFSS   PIR1, TXIF
+    RETURN
+    MOVFW   ADCA
+    MOVWF   TXREG
+    RETURN
+    
+
 
 ;**********************************ADC A, B, C********************************    
     
 POTA:
     BANKSEL PORTA
-    CALL    DELAY10US
+    CALL    DELAY10U
     BANKSEL ADCON0
     MOVLW   B'01000001'
     MOVWF   ADCON0    
@@ -271,7 +305,7 @@ POTA:
     
 POTB:
     BANKSEL PORTA
-    CALL    DELAY10US
+    CALL    DELAY10U
     BANKSEL ADCON0
     MOVLW   B'01000101'
     MOVWF   ADCON0    
@@ -287,7 +321,7 @@ POTB:
     
 POTC:
     BANKSEL PORTA
-    CALL    DELAY10US
+    CALL    DELAY10U
     BANKSEL ADCON0
     MOVLW   B'01001001'
     MOVWF   ADCON0    
@@ -303,7 +337,7 @@ POTC:
     
 POTD:
     BANKSEL PORTA
-    CALL    DELAY10US
+    CALL    DELAY10U
     BANKSEL ADCON0
     MOVLW   B'01001101'
     MOVWF   ADCON0    
