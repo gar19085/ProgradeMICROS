@@ -1,5 +1,4 @@
-; TODO INSERT CONFIG 
-    CODE HERE USING CONFIG BITS GENERATOR
+; TODO INSERT CONFIG CODE HERE USING CONFIG BITS GENERATOR
 
 
 ; PIC16F887 Configuration Bit Settings
@@ -17,15 +16,17 @@
 
  
    GPR	UDATA
-    ADCA	RES 1
-    ADCB	RES 1
-    ADCC	RES 1
-    DELAY	RES 1
-    W_TEMP	RES 1
-    STATUS_TEMP RES 1
-    FUE_TMR2	RES 1
-    PZ		RES 1   
-   
+   ADCA	RES 1
+   ADCB	RES 1
+   ADCC	RES 1
+   ADCD RES 1	
+   DELAY	RES 1
+   W_TEMP	RES 1
+   STATUS_TEMP RES 1
+   PZ		RES 1   
+   SERVH    RES 1
+   SERVL    RES 1
+   SERV3    RES 1 
 
 	
 RES_VECT  CODE    0x0000            ; processor reset vector
@@ -43,7 +44,6 @@ PUSH:
 
 ISR:
     BTFSC   PIR1, TMR2IF
-    CALL    FUE_TMR2
     BTFSC   PIR1, TMR1IF
     CALL    FUE_TMR1
     BTFSC   INTCON, T0IF
@@ -101,7 +101,19 @@ LOOP
     CALL DELAY10US
     CALL POTC
     CALL DELAY10US
+    CALL POTD
+    CALL DELAY10US    
+
+    BTFSS   PIR1, TXIF
+    MOVFW   ADCA
+    MOVWF   TXREG
     
+    
+    CLRF    SERV3
+    CLRF    SERVH
+    CLRF    SERVL
+    CALL    PWM3
+
     
     GOTO LOOP
 
@@ -157,13 +169,11 @@ CONFIG_PWM
     MOVLW   B'00000000'
     MOVWF   TRISC
     
-    ;CONFIGURACIÓN DE CCP1CON
     BANKSEL CCP1CON	    ;PWM MODE
     BSF	    CCP1CON,   3
     BSF	    CCP1CON,   2
     BCF	    CCP1CON,   1
     BCF	    CCP1CON,   0
-    ;CONFIGURACIÓN DE CCP2CON
     BANKSEL CCP2CON	    ;PWM MODE
     BSF	    CCP2CON,   3
     BSF	    CCP2CON,   2
@@ -242,40 +252,7 @@ CONFIG_TXRX
     RETURN
     
     
-;*********RUTINA ENVIO*****************************************************
-    
-    
-ENVIO1:
-    BCF	    PZ, 0
-    BSF	    PZ, 1
-    BTFSS   PIR1, TXIF
-    MOVFW   ADCA
-    MOVWF   TXREG
-    RETURN
-    
-ENVIO2:
-  ;  BSF	    PZ, 0
-  ;  BCF	    PZ, 1
-    BTFSS   PIR1, TXIF
-  ;  MOVFW   ADC2
-    MOVWF   TXREG
-    RETURN    
-    
-SELE:
-  ;  BTFSC   PZ, 0
-    GOTO    ENVIO1
-    CALL    DELAY10US
-  ;  BTFSC   PZ, 1
-    GOTO    ENVIO2
-    CALL    DELAY10US
-    RETURN  
-    
-;*****************RECIBIR DATOS***********************************************
-RECIBO1:
-    
-    
-    
-    
+
 ;**********************************ADC A, B, C********************************    
     
 POTA:
@@ -323,6 +300,39 @@ POTC:
     MOVF    ADCC, W
     MOVWF   CCPR2L   
     RETURN    
+    
+POTD:
+    BANKSEL PORTA
+    CALL    DELAY10US
+    BANKSEL ADCON0
+    MOVLW   B'01001101'
+    MOVWF   ADCON0    
+    BSF	    ADCON0, GO
+    BTFSC   ADCON0, GO
+    GOTO    $-1
+    MOVF    ADRESH, W
+    MOVWF   ADCD
+    MOVWF   PORTD
+    RETURN       
+    
+;**********************************PWM 3***************************************
+    
+PWM3
+    BTFSC SERV3, 0
+    GOTO  OFF
+ON:
+    MOVFW   SERVH
+    MOVWF   TMR0
+    BSF	    SERV3, 0
+    BCF	    INTCON, T0IF
+    RETURN
+OFF:    
+    MOVFW   SERVL
+    MOVWF   TMR0
+    BCF	    SERV3, 0
+    BCF	    INTCON, T0IF
+    RETURN
+    
     
     
     END
